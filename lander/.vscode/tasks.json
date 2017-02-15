@@ -4,9 +4,8 @@
     "version": "0.1.0",
     "command": "tsc",
     "isShellCommand": true,
-    "args": ["--p", "./tsconfig.json", "--w"],
+    "args": ["--p", "./tsconfig.json"],
     "echoCommand": true,
     "showOutput": "always",
-    "problemMatcher": "$tsc",
-    "out": "compiledjs"
+    "problemMatcher": "$tsc"
 }

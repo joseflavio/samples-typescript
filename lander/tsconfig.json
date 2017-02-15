@@ -2,12 +2,14 @@
     "compilerOptions": {
         "target": "es5",
         "module": "commonjs",
+        "alwaysStrict": true,
         "sourceMap": true,
         "removeComments": true,
-        "noImplicitAny": true
+        "noImplicitAny": true,
+        "outDir": "wwwroot/compiledjs"
     },
     "include": [
-        "typescript/*"        
+        "src/main/typescript/*"        
     ],
     "exclude": [
         "node_modules",
