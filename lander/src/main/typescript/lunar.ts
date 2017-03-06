@@ -19,14 +19,13 @@ function handleResize() {
     console.log("displayHeight="+ displayHeight);
     if (canvas.getContext) {
       // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D
-      const ctx : CanvasRenderingContext2D  = canvas.getContext('2d');
+      const ctx : CanvasRenderingContext2D = canvas.getContext('2d');
       draw(ctx, displayWidth, displayHeight);
     }
     else {
       console.log("Canvas not valid");
-    }  
+    }
 }
-
 
 function drawLunarModule(ctx : CanvasRenderingContext2D) {
     console.log("drawLunarModule");
@@ -54,20 +53,18 @@ function draw2(ctx : CanvasRenderingContext2D, cw: number, ch: number) {
 
 function drawTerrain(terrain: Array<p2d>,
                       ctx : CanvasRenderingContext2D,
-                      cw: number, ch: number)
-{  
-  // console.log(terrain[1].a);
-  for(const t of terrain) {
-    console.log(t.x2);
-  }
-  
+                      cw: number, ch: number) {
+    // console.log(terrain[1].a);
+    for(const t of terrain) {
+       console.log(t.x2);
+    }
+
 }
 
 function draw(ctx : CanvasRenderingContext2D, cw: number, ch: number) {
     const terrain = [ { x1: 0, y1: 100, x2: 1000, y2: 500 }, { x1: 1000, y1: 500, x2: 1500, y2: 100 }, { x1: 1500, y1: 100, x2: 3000, y2: 100 }, { x1: 3000, y1: 100, x2: 5000, y2: 1500 }, { x1: 5000, y1: 1500, x2: 6999, y2: 1000 } ];
-  
+
     drawTerrain(terrain, ctx, cw, ch);
     draw2(ctx, cw, ch);
-    drawLunarModule(ctx);      
+    drawLunarModule(ctx);
 }
-  
