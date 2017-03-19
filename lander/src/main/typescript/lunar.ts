@@ -8,6 +8,33 @@ interface p2d {
     y2: number;
 }
 
+class LunarModule {
+    centerX: number;
+    centerY: number;
+    constructor(initialX: number, initialY: number) {
+        this.centerX = initialX;
+        this.centerY = initialY;
+    }
+    getMinY() : number {
+        return this.centerY - 50;
+    }
+    getMinX() : number {
+        return this.centerX - 50;
+    }
+    getMaxX() : number {
+        return this.centerX + 50;
+    }
+}
+let lunarModule = new LunarModule(2500, 2500);
+
+function scaleX(x: number, cw: number) : number {
+    return (x * cw) / 6999;
+}
+
+function scaleY(y: number, ch: number) : number {
+    return ((2999-y) * ch) / 2999;
+}
+
 function handleResize() {
     const canvas = <HTMLCanvasElement>document.getElementById('canvas01');
     const displayWidth  = canvas.clientWidth;
@@ -16,25 +43,34 @@ function handleResize() {
       canvas.width  = displayWidth;
       canvas.height = displayHeight;
     }
-    console.log("displayHeight="+ displayHeight);
     if (canvas.getContext) {
-      // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D
-      const ctx : CanvasRenderingContext2D = canvas.getContext('2d');
-      draw(ctx, displayWidth, displayHeight);
+        // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D
+        console.log("displayWidth="+ displayWidth);
+        console.log("displayHeight="+ displayHeight);
+        const ctx : CanvasRenderingContext2D = canvas.getContext('2d');
+        draw(ctx, displayWidth, displayHeight);
     }
     else {
       console.log("Canvas not valid");
     }
 }
 
-function drawLunarModule(ctx : CanvasRenderingContext2D) {
-    console.log("drawLunarModule");
-    ctx.fillStyle = 'rgba(0,0,255,0.5)';
-    ctx.fillRect(25,25,100,100);
-    ctx.clearRect(45,45,60,60);
+function drawLunarModule(ctx : CanvasRenderingContext2D, cw: number, ch: number) {
+    // ctx.fillStyle = 'rgba(0,0,255,0.5)';
     ctx.strokeStyle = 'rgba(255, 255, 0, 1)';
-    ctx.strokeRect(50,50,50,50);
-    console.log("drawLunarModule finished");
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+
+        const radius = scaleX((lunarModule.getMaxX()-lunarModule.getMinX())/2, cw);
+    ctx.arc(scaleX(lunarModule.centerX, cw), scaleY(lunarModule.centerY, cw), radius, 0, 2 * Math.PI, false);
+    
+    ctx.moveTo(scaleX(lunarModule.centerX, cw), scaleY(lunarModule.centerY, cw));
+    ctx.lineTo(scaleX(lunarModule.getMinX(), cw), scaleY(lunarModule.getMinY(), cw));
+    ctx.lineTo(scaleX(lunarModule.getMaxX(), cw), scaleY(lunarModule.getMinY(), cw));
+    ctx.lineTo(scaleX(lunarModule.centerX, cw), scaleY(lunarModule.centerY, cw));
+    ctx.stroke();
+
+    ctx.stroke();
 }
 
 function draw2(ctx : CanvasRenderingContext2D, cw: number, ch: number) {
@@ -42,9 +78,9 @@ function draw2(ctx : CanvasRenderingContext2D, cw: number, ch: number) {
     ctx.fillStyle = "green";
     ctx.fillRect(10, 10, 30, 30);
     ctx.strokeStyle = 'rgba(255, 0, 0, 1)';
-    ctx.beginPath();
-    ctx.moveTo(0,0);    
     ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0,0);
     ctx.lineTo(0, ch);
     ctx.lineTo(cw/2, ch);
     ctx.stroke();
@@ -55,10 +91,14 @@ function drawTerrain(terrain: Array<p2d>,
                       ctx : CanvasRenderingContext2D,
                       cw: number, ch: number) {
     // console.log(terrain[1].a);
+    ctx.strokeStyle = 'rgba(255, 0, 0, 1)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
     for(const t of terrain) {
-       console.log(t.x2);
+        ctx.moveTo(scaleX(t.x1, cw), scaleY(t.y1, ch));
+        ctx.lineTo(scaleX(t.x2, cw), scaleY(t.y2, ch));
     }
-
+    ctx.stroke();
 }
 
 function draw(ctx : CanvasRenderingContext2D, cw: number, ch: number) {
@@ -66,5 +106,5 @@ function draw(ctx : CanvasRenderingContext2D, cw: number, ch: number) {
 
     drawTerrain(terrain, ctx, cw, ch);
     draw2(ctx, cw, ch);
-    drawLunarModule(ctx);
+    drawLunarModule(ctx, cw, ch);
 }
