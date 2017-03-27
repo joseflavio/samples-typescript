@@ -1,4 +1,22 @@
-window.addEventListener("resize", handleResize);
+// Main (entrypoint after page loads)
+function onLoadMain() {
+    //window.addEventListener("resize", handleResize);
+    window.addEventListener("keydown", onKeyDown, false); // capture = true
+}
+
+let paused = true;
+function onKeyDown(e :KeyboardEvent) {
+    console.log("onKeyDown() :: e.keyCode="+e.keyCode);
+    if(e.keyCode == 32) {
+        if(paused) {
+            paused = false;
+        }
+        else {
+            paused = true;
+        }
+        handleResize();
+    }
+}
 
 // TypeScript
 interface p2d {  
@@ -44,14 +62,18 @@ function scaleY(y: number, ch: number) : number {
 }
 
 function updatePhysics(tStepMillis : number) {
-    lunarModule.accelerateY(-0.003711); // 3.711 per second = 003711 per millisecond
+    lunarModule.accelerateY(-0.003711 * tStepMillis); // 3.711 per second = 003711 per millisecond
     lunarModule.updatePosition();
 }
 
-var drawPending = false;
-var tNow = window.performance.now();
+let drawPending = false;
+let tNow = window.performance.now();
 const offCanvas = <HTMLCanvasElement>document.createElement('canvas');
 function handleResize() {
+
+    if(paused) {
+        return;
+    }
 
     const tStep = window.performance.now() - tNow;
     console.log("tStep="+ tStep);
