@@ -4,21 +4,6 @@ function onLoadMain() {
     window.addEventListener("keydown", onKeyDown, false); // capture = true
 }
 
-let paused = true;
-function onKeyDown(e :KeyboardEvent) {
-    console.log("onKeyDown() :: e.keyCode="+e.keyCode);
-    if(e.keyCode == 32) {
-        if(paused) {
-            paused = false;
-        }
-        else {
-            paused = true;
-        }
-        handleResize();
-    }
-}
-
-// TypeScript
 interface p2d {  
     x1: number;
     y1: number;
@@ -51,7 +36,54 @@ class LunarModule {
         this.centerY += this.speedY;
     }
 }
-let lunarModule = new LunarModule(2500, 2500);
+
+class LunarGame {
+
+    gamePaused: boolean = true;
+
+    terrain: Array<p2d>;
+    lunarModule: LunarModule;
+
+    constructor() {
+        this.terrain = [ { x1: 0, y1: 100, x2: 1000, y2: 500 }, { x1: 1000, y1: 500, x2: 1500, y2: 100 }, { x1: 1500, y1: 100, x2: 3000, y2: 100 }, { x1: 3000, y1: 100, x2: 5000, y2: 1500 }, { x1: 5000, y1: 1500, x2: 6999, y2: 1000 } ];
+        this.lunarModule = new LunarModule(2500, 2500);
+    }
+    isGamePaused() : boolean {
+        return this.gamePaused;
+    }
+    pause() {
+        this.gamePaused = true;
+    }
+    continue() {
+        this.gamePaused = false;
+    }
+
+    updatePhysics(tStepMillis : number) {
+        this.lunarModule.accelerateY(-0.003711 * tStepMillis); // our fake gravity is 3.711 per second = 003711 per millisecond
+        this.lunarModule.updatePosition();
+    }
+
+    draw(ctx : CanvasRenderingContext2D, cw: number, ch: number) {
+        drawTerrain(this.terrain, ctx, cw, ch);
+        drawLunarModule(this.lunarModule, ctx, cw, ch);
+    }
+
+}
+var game: LunarGame = new LunarGame();
+
+function onKeyDown(e :KeyboardEvent) {
+    console.log("onKeyDown() :: e.keyCode="+e.keyCode);
+    // Space
+    if(e.keyCode == 32) {
+        if(game.isGamePaused()) {
+            game.continue();
+        }
+        else {
+            game.pause();
+        }
+        handleResize();
+    }
+}
 
 function scaleX(x: number, cw: number) : number {
     return (x * cw) / 6999;
@@ -61,25 +93,20 @@ function scaleY(y: number, ch: number) : number {
     return ((2999-y) * ch) / 2999;
 }
 
-function updatePhysics(tStepMillis : number) {
-    lunarModule.accelerateY(-0.003711 * tStepMillis); // 3.711 per second = 003711 per millisecond
-    lunarModule.updatePosition();
-}
-
 let drawPending = false;
-let tNow = window.performance.now();
+let tLastStep = window.performance.now();
 const offCanvas = <HTMLCanvasElement>document.createElement('canvas');
 function handleResize() {
 
-    if(paused) {
+    const tStep = window.performance.now() - tLastStep;
+    console.log("tStep="+ tStep);
+    tLastStep = window.performance.now();
+
+    if(game.isGamePaused()) {
         return;
     }
 
-    const tStep = window.performance.now() - tNow;
-    console.log("tStep="+ tStep);
-    tNow = window.performance.now();
-
-    updatePhysics(tStep);
+    game.updatePhysics(tStep);
 
     // file:///C:/Users/a/Desktop/Github/samples-typescript/lander/wwwroot/lunar.html
 
@@ -101,7 +128,7 @@ function handleResize() {
         const ctx : CanvasRenderingContext2D = canvas.getContext('2d');
         if (ctx && offCtx) {
             // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D
-            draw(offCtx, displayWidth, displayHeight);
+            game.draw(offCtx, displayWidth, displayHeight);
             ctx.clearRect(0, 0, displayWidth, displayHeight);
             ctx.drawImage(offCanvas, 0, 0);
             offCtx.clearRect(0, 0, displayWidth, displayHeight);
@@ -114,7 +141,7 @@ function handleResize() {
     }
 }
 
-function drawLunarModule(ctx : CanvasRenderingContext2D, cw: number, ch: number) {
+function drawLunarModule(lunarModule: LunarModule, ctx: CanvasRenderingContext2D, cw: number, ch: number) {
     // ctx.fillStyle = 'rgba(0,0,255,0.5)';
     ctx.strokeStyle = 'rgba(255, 255, 0, 1)';
     ctx.lineWidth = 3;
@@ -132,20 +159,6 @@ function drawLunarModule(ctx : CanvasRenderingContext2D, cw: number, ch: number)
     ctx.stroke();
 }
 
-function draw2(ctx : CanvasRenderingContext2D, cw: number, ch: number) {
-    console.log("draw2");
-    ctx.fillStyle = "green";
-    ctx.fillRect(10, 10, 30, 30);
-    ctx.strokeStyle = 'rgba(255, 0, 0, 1)';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(0,0);
-    ctx.lineTo(0, ch);
-    ctx.lineTo(cw/2, ch);
-    ctx.stroke();
-    console.log("draw2 finished");
-}
-
 function drawTerrain(terrain: Array<p2d>,
                       ctx : CanvasRenderingContext2D,
                       cw: number, ch: number) {
@@ -158,12 +171,4 @@ function drawTerrain(terrain: Array<p2d>,
         ctx.lineTo(scaleX(t.x2, cw), scaleY(t.y2, ch));
     }
     ctx.stroke();
-}
-
-function draw(ctx : CanvasRenderingContext2D, cw: number, ch: number) {
-    const terrain = [ { x1: 0, y1: 100, x2: 1000, y2: 500 }, { x1: 1000, y1: 500, x2: 1500, y2: 100 }, { x1: 1500, y1: 100, x2: 3000, y2: 100 }, { x1: 3000, y1: 100, x2: 5000, y2: 1500 }, { x1: 5000, y1: 1500, x2: 6999, y2: 1000 } ];
-    
-    drawTerrain(terrain, ctx, cw, ch);
-    draw2(ctx, cw, ch);
-    drawLunarModule(ctx, cw, ch);
 }
