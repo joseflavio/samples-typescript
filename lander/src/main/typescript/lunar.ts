@@ -1,7 +1,10 @@
+// to run: file:///C:/Users/a/Desktop/Github/samples-typescript/lander/wwwroot/lunar.html
+
 // Main (entrypoint after page loads)
 function onLoadMain() {
     //window.addEventListener("resize", handleResize);
     window.addEventListener("keydown", onKeyDown, false); // capture = true
+    requestAnimationFrame(gameLoop);
 }
 
 interface p2d {  
@@ -33,6 +36,8 @@ class LunarModule {
         this.speedY += accY;
     }
     updatePosition() {
+        console.log("this.speedY=" + this.speedY);
+         console.log("this.centerY=" + this.centerY);
         this.centerY += this.speedY;
     }
 }
@@ -40,11 +45,15 @@ class LunarModule {
 class LunarGame {
 
     gamePaused: boolean = true;
+    tLastStep: number;
+    tBeforePauseStep: number;
 
     terrain: Array<p2d>;
     lunarModule: LunarModule;
 
     constructor() {
+        this.tLastStep = window.performance.now();
+        this.tBeforePauseStep = 0;
         this.terrain = [ { x1: 0, y1: 100, x2: 1000, y2: 500 }, { x1: 1000, y1: 500, x2: 1500, y2: 100 }, { x1: 1500, y1: 100, x2: 3000, y2: 100 }, { x1: 3000, y1: 100, x2: 5000, y2: 1500 }, { x1: 5000, y1: 1500, x2: 6999, y2: 1000 } ];
         this.lunarModule = new LunarModule(2500, 2500);
     }
@@ -52,13 +61,26 @@ class LunarGame {
         return this.gamePaused;
     }
     pause() {
+        this.tBeforePauseStep += window.performance.now() - this.tLastStep;
+        this.tLastStep = null;
         this.gamePaused = true;
     }
     continue() {
+        this.tLastStep = window.performance.now() - this.tBeforePauseStep;
+        this.tBeforePauseStep = 0;
         this.gamePaused = false;
+    }
+    executeLoop() {
+        if(this.gamePaused === false) {
+            let now = window.performance.now();
+            let step = now - this.tLastStep;
+            this.tLastStep = now;
+            handleResize(step);
+        }
     }
 
     updatePhysics(tStepMillis : number) {
+        console.log("tStepMillis=" + tStepMillis);
         this.lunarModule.accelerateY(-0.003711 * tStepMillis); // our fake gravity is 3.711 per second = 003711 per millisecond
         this.lunarModule.updatePosition();
     }
@@ -71,6 +93,12 @@ class LunarGame {
 }
 var game: LunarGame = new LunarGame();
 
+function gameLoop() {
+    // console.log("gameLoop()");
+    game.executeLoop();
+    requestAnimationFrame(gameLoop);
+}
+
 function onKeyDown(e :KeyboardEvent) {
     console.log("onKeyDown() :: e.keyCode="+e.keyCode);
     // Space
@@ -81,7 +109,6 @@ function onKeyDown(e :KeyboardEvent) {
         else {
             game.pause();
         }
-        handleResize();
     }
 }
 
@@ -93,52 +120,45 @@ function scaleY(y: number, ch: number) : number {
     return ((2999-y) * ch) / 2999;
 }
 
-let drawPending = false;
-let tLastStep = window.performance.now();
 const offCanvas = <HTMLCanvasElement>document.createElement('canvas');
-function handleResize() {
-
-    const tStep = window.performance.now() - tLastStep;
-    console.log("tStep="+ tStep);
-    tLastStep = window.performance.now();
+function handleResize(tStep: number) {
 
     if(game.isGamePaused()) {
         return;
     }
 
+    if(!(tStep > 0)) {
+        console.error("Unexpected tStep! tStep="+tStep);
+        return;
+    }
+
     game.updatePhysics(tStep);
 
-    // file:///C:/Users/a/Desktop/Github/samples-typescript/lander/wwwroot/lunar.html
-
-    if (!drawPending) {
-
-        const canvas = <HTMLCanvasElement>document.getElementById('canvas01');
-        const displayWidth  = canvas.clientWidth;
-        const displayHeight = canvas.clientHeight;
-        if (canvas.width  != displayWidth || canvas.height != displayHeight) {
-            canvas.width  = displayWidth;
-            canvas.height = displayHeight;
-        }
-        if (offCanvas.width  != displayWidth || offCanvas.height != displayHeight) {
-            offCanvas.width  = displayWidth;
-            offCanvas.height = displayHeight;
-        }
-
-        const offCtx : CanvasRenderingContext2D = offCanvas.getContext('2d');
-        const ctx : CanvasRenderingContext2D = canvas.getContext('2d');
-        if (ctx && offCtx) {
-            // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D
-            game.draw(offCtx, displayWidth, displayHeight);
-            ctx.clearRect(0, 0, displayWidth, displayHeight);
-            ctx.drawImage(offCanvas, 0, 0);
-            offCtx.clearRect(0, 0, displayWidth, displayHeight);
-        }
-        else {
-            console.log("Canvas not valid");
-        }
-        drawPending = false;
-        requestAnimationFrame(handleResize);
+    const canvas = <HTMLCanvasElement>document.getElementById('canvas01');
+    const displayWidth  = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+    if (canvas.width  != displayWidth || canvas.height != displayHeight) {
+        canvas.width  = displayWidth;
+        canvas.height = displayHeight;
     }
+    if (offCanvas.width  != displayWidth || offCanvas.height != displayHeight) {
+        offCanvas.width  = displayWidth;
+        offCanvas.height = displayHeight;
+    }
+
+    const offCtx : CanvasRenderingContext2D = offCanvas.getContext('2d');
+    const ctx : CanvasRenderingContext2D = canvas.getContext('2d');
+    if (ctx && offCtx) {
+        // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D
+        game.draw(offCtx, displayWidth, displayHeight);
+        ctx.clearRect(0, 0, displayWidth, displayHeight);
+        ctx.drawImage(offCanvas, 0, 0);
+        offCtx.clearRect(0, 0, displayWidth, displayHeight);
+    }
+    else {
+        console.log("Canvas not valid");
+    }
+
 }
 
 function drawLunarModule(lunarModule: LunarModule, ctx: CanvasRenderingContext2D, cw: number, ch: number) {
